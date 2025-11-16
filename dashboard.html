@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Dashboard – PermitBot Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Manage permit packets and automate permit paperwork with PermitBot Pro." />
+  <meta name="description" content="Manage permit packets with PermitBot Pro." />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
@@ -33,172 +33,75 @@
     <!-- Main -->
     <main class="flex-1">
       <div class="max-w-5xl mx-auto px-4 py-8 space-y-8">
-        <!-- Top summary -->
-        <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 class="text-2xl font-semibold text-white">Welcome to your permit workspace</h1>
-            <p class="mt-1 text-sm text-slate-300 max-w-xl">
-              Create a new permit packet by entering the parcel, jurisdiction, and project type. During early access,
-              packets are generated with a mix of AI + manual review.
-            </p>
-          </div>
-          <div class="rounded-xl border border-emerald-400/40 bg-slate-900/80 px-4 py-3 text-xs text-slate-200">
-            <p class="font-semibold text-emerald-300 mb-1">Early access status</p>
-            <p>We’re onboarding new jurisdictions based on real jobs submitted through this dashboard.</p>
-          </div>
+        <!-- Intro -->
+        <section>
+          <h1 class="text-2xl font-semibold text-white">Dashboard</h1>
+          <p class="mt-1 text-sm text-slate-300 max-w-xl">
+            Use this early access dashboard to ask AI which permits/forms you likely need for a job.
+            Later, this will tie into auto-filled PDFs and saved projects.
+          </p>
         </section>
 
-        <!-- New permit packet form -->
-        <section class="grid md:grid-cols-[2fr,1.5fr] gap-6">
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
-            <h2 class="text-sm font-semibold text-white mb-1">New permit packet</h2>
-            <p class="text-xs text-slate-400 mb-4">
-              Fill this out like you would when you’re sending info to your office admin or EIT. We’ll use this to
-              build and refine the AI engine.
+        <!-- Ask AI section -->
+        <section class="max-w-3xl space-y-3">
+          <h2 class="text-lg font-semibold text-white">Ask AI for permit suggestions</h2>
+          <p class="text-xs text-slate-300">
+            Fill this out like you’re emailing your office admin or EIT. Jurisdiction and project type are required.
+          </p>
+
+          <div class="space-y-2 text-sm rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+            <div class="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-slate-200 mb-1">Jurisdiction *</label>
+                <input id="ai-jurisdiction"
+                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                  placeholder="Palm Coast, Volusia County, Daytona Beach..." />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-200 mb-1">Project type *</label>
+                <input id="ai-project-type"
+                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                  placeholder="SFR – New build, pool, TI, etc." />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-200 mb-1">Parcel or address (optional)</label>
+              <input id="ai-parcel"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                placeholder="25 Pine Grove Dr, Palm Coast, FL or parcel ID" />
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-200 mb-1">What forms do you think you need? (optional)</label>
+              <textarea id="ai-forms-expected" rows="2"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                placeholder="Building permit, utility app, FDEP potable/sewer, stormwater checklist, ROW…"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-200 mb-1">Extra context (optional)</label>
+              <textarea id="ai-extra" rows="3"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+                placeholder="City water/sewer or well/septic, flood zone, special conditions, etc."></textarea>
+            </div>
+
+            <button
+              onclick="runPermitAI()"
+              class="mt-2 rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300">
+              Ask AI
+            </button>
+            <p class="text-[11px] text-slate-500">
+              This calls your /api/ai-permit-suggest endpoint using your OpenAI key on Vercel.
             </p>
-
-            <form
-              action="https://formspree.io/f/mqawpvld"
-              method="POST"
-              class="space-y-4 text-sm"
-            >
-              <input type="hidden" name="source" value="dashboard-new-packet" />
-
-              <div class="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs text-slate-200 mb-1">Parcel ID or full address</label>
-                  <input
-                    type="text"
-                    name="parcel_or_address"
-                    placeholder="1234-567-890 or 123 Main St, Palm Coast, FL"
-                    required
-                    class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs text-slate-200 mb-1">Jurisdiction</label>
-                  <input
-                    type="text"
-                    name="jurisdiction"
-                    placeholder="e.g., Palm Coast, Volusia County, Daytona Beach"
-                    required
-                    class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
-                  />
-                </div>
-              </div>
-
-              <div class="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs text-slate-200 mb-1">Project type</label>
-                  <select
-                    name="project_type"
-                    class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
-                    required
-                  >
-                    <option value="">Select…</option>
-                    <option>SFR – New build</option>
-                    <option>SFR – Addition / remodel</option>
-                    <option>Townhome / multifamily</option>
-                    <option>Commercial – New build</option>
-                    <option>Commercial – TI / renovation</option>
-                    <option>Pool / screen enclosure</option>
-                    <option>Roof / solar / mechanical</option>
-                    <option>Utility extension / service change</option>
-                    <option>Other (describe below)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs text-slate-200 mb-1">Rough start date / urgency</label>
-                  <input
-                    type="text"
-                    name="timeline"
-                    placeholder="e.g., ASAP, bidding now, start in 30 days"
-                    class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-xs text-slate-200 mb-1">What permits/forms do you think you need?</label>
-                <textarea
-                  name="forms_expected"
-                  rows="2"
-                  placeholder="e.g., city building permit, utility app, FDEP potable/sewer, stormwater checklist, ROW permit…"
-                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
-                ></textarea>
-              </div>
-
-              <div>
-                <label class="block text-xs text-slate-200 mb-1">Extra context (optional)</label>
-                <textarea
-                  name="extra_context"
-                  rows="3"
-                  placeholder="Any notes you’d normally email your engineer/admin: lot type, utilities (well/septic or city), flood zone concerns, special conditions, etc."
-                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                class="w-full rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300 transition"
-              >
-                Submit job for packet generation
-              </button>
-
-              <p class="text-[11px] text-slate-500">
-                During early access, submissions come straight to the PermitBot Pro team. We’ll use these to train and
-                calibrate the AI engine and can send you draft packets as we go.
-              </p>
-            </form>
           </div>
 
-          <!-- Right side: fake recent activity -->
-          <div class="space-y-4">
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-xs">
-              <h2 class="text-sm font-semibold text-white mb-2">Recent packets (sample data)</h2>
-              <ul class="space-y-2 text-slate-300">
-                <li class="flex justify-between gap-2">
-                  <div>
-                    <p class="font-medium text-slate-100">SFR – New build</p>
-                    <p class="text-[11px] text-slate-400">Palm Coast • City building + utility + FDEP</p>
-                  </div>
-                  <span class="self-start rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
-                    Generated
-                  </span>
-                </li>
-                <li class="flex justify-between gap-2">
-                  <div>
-                    <p class="font-medium text-slate-100">Commercial TI</p>
-                    <p class="text-[11px] text-slate-400">Daytona Beach • Building + fire + utility</p>
-                  </div>
-                  <span class="self-start rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-300">
-                    In review
-                  </span>
-                </li>
-                <li class="flex justify-between gap-2">
-                  <div>
-                    <p class="font-medium text-slate-100">Pool + screen enclosure</p>
-                    <p class="text-[11px] text-slate-400">Volusia County • Building + zoning</p>
-                  </div>
-                  <span class="self-start rounded-full bg-slate-500/20 px-2 py-0.5 text-[10px] text-slate-300">
-                    Sample
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-xs">
-              <h2 class="text-sm font-semibold text-white mb-2">What we’re training the AI on</h2>
-              <ul class="list-disc list-inside space-y-1 text-slate-300">
-                <li>Mapping parcel + project type → correct jurisdiction forms.</li>
-                <li>Auto-filling owner / contractor / project fields consistently.</li>
-                <li>Suggesting likely additional permits (ROW, utility, FDEP, etc.).</li>
-                <li>Generating draft narratives / checklists from your notes.</li>
-              </ul>
-              <p class="mt-2 text-[11px] text-slate-500">
-                Every job you submit here helps calibrate the model to real Florida permitting workflows.
-              </p>
-            </div>
+          <!-- Output -->
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+            <h3 class="text-sm font-semibold text-white mb-1">AI output</h3>
+            <pre id="ai-output" class="text-xs text-slate-300 whitespace-pre-wrap">
+Fill out the fields above and click “Ask AI” to see suggested forms here.
+            </pre>
           </div>
         </section>
       </div>
@@ -208,13 +111,45 @@
     <footer class="border-t border-slate-800">
       <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
         <span>© <span id="year"></span> PermitBot Pro.</span>
-        <span>Early access dashboard • Not for official submittals (yet).</span>
+        <span>Early access dashboard.</span>
       </div>
     </footer>
   </div>
 
   <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    async function runPermitAI() {
+      const payload = {
+        parcel_or_address: document.getElementById("ai-parcel").value,
+        jurisdiction: document.getElementById("ai-jurisdiction").value,
+        project_type: document.getElementById("ai-project-type").value,
+        forms_expected: document.getElementById("ai-forms-expected").value,
+        extra_context: document.getElementById("ai-extra").value
+      };
+
+      const out = document.getElementById("ai-output");
+
+      if (!payload.jurisdiction || !payload.project_type) {
+        out.textContent = "Please fill at least jurisdiction and project type.";
+        return;
+      }
+
+      out.textContent = "Thinking…";
+
+      try {
+        const res = await fetch("/api/ai-permit-suggest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        out.textContent = "Error talking to AI: " + err.message;
+      }
+    }
   </script>
 </body>
 </html>
