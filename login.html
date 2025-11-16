@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Log in – PermitBot Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Log in to PermitBot Pro to manage permit packets and automate paperwork." />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-950/90">
+      <div class="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+        <a href="index.html" class="flex items-center gap-2">
+          <div class="h-9 w-9 rounded-2xl bg-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg">
+            PB
+          </div>
+          <div class="flex flex-col leading-tight">
+            <span class="font-semibold text-sm tracking-tight">PermitBot Pro</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-[0.15em]">Permit Automation</span>
+          </div>
+        </a>
+        <a href="signup.html" class="text-xs text-slate-300 hover:text-white">
+          Create account
+        </a>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1 flex items-center justify-center px-4 py-10">
+      <div class="w-full max-w-md">
+        <div class="mb-6">
+          <h1 class="text-2xl font-semibold text-white">Log in</h1>
+          <p class="mt-1 text-sm text-slate-300">
+            Access your projects and permit packets. Don’t have an account yet?
+            <a href="signup.html" class="text-emerald-400 hover:text-emerald-300">Create one here.</a>
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+          <!-- NOTE: action is a placeholder for now -->
+          <form action="#" method="POST" class="space-y-4 text-sm">
+            <div>
+              <label class="block text-xs text-slate-200 mb-1">Email</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="you@company.com"
+                required
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs text-slate-200 mb-1">Password</label>
+              <input
+                type="password"
+                name="password"
+                placeholder="••••••••"
+                required
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400/70"
+              />
+            </div>
+
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 text-xs text-slate-300">
+                <input type="checkbox" class="h-3 w-3 rounded border-slate-600 bg-slate-950" />
+                <span>Remember me</span>
+              </label>
+              <button type="button" class="text-[11px] text-slate-400 hover:text-slate-200">
+                Forgot password?
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              class="w-full rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-300 transition"
+            >
+              Log in
+            </button>
+
+            <p class="text-[11px] text-slate-500">
+              This is a visual login screen only for now. Hook it up to a real auth service
+              (Supabase, Firebase Auth, Clerk, Auth0, etc.) when you’re ready.
+            </p>
+          </form>
+        </div>
+
+        <div class="mt-6 text-center text-xs text-slate-500">
+          <a href="index.html" class="hover:text-slate-200">← Back to home</a>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800">
+      <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-slate-500">
+        <span>© <span id="year"></span> PermitBot Pro</span>
+        <span>Florida first.</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
