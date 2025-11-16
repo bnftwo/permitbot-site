@@ -68,11 +68,16 @@ Extra context: ${extra_context || "N/A"}
       }),
     });
 
-    if (!aiRes.ok) {
+        if (!aiRes.ok) {
       const text = await aiRes.text();
       console.error("OpenAI error:", text);
-      return response.status(500).json({ error: "AI request failed" });
+      return response.status(500).json({
+        error: "AI request failed",
+        status: aiRes.status,
+        detail: text
+      });
     }
+
 
     const data = await aiRes.json();
     const content = data.choices?.[0]?.message?.content;
