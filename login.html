@@ -2,93 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Dashboard – PermitBot Pro</title>
+  <title>Login – PermitBot Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Manage permit packets with PermitBot Pro." />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-50 antialiased">
-  <div class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="border-b border-slate-800 bg-slate-950/90">
-      <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <a href="index.html" class="flex items-center gap-2">
-          <div class="h-9 w-9 rounded-2xl bg-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg">
-            PB
-          </div>
-          <div class="flex flex-col leading-tight">
-            <span class="font-semibold text-sm tracking-tight">PermitBot Pro</span>
-            <span class="text-[11px] text-slate-400 uppercase tracking-[0.15em]">Permit Dashboard</span>
-          </div>
-        </a>
-        <div class="flex items-center gap-3 text-xs">
-          <span class="hidden sm:inline text-slate-400">Early access workspace</span>
-          <a href="login.html" class="rounded-full border border-slate-700 px-3 py-1.5 text-slate-200 hover:border-emerald-400/70">
-            Log out
-          </a>
-        </div>
+
+<body class="bg-slate-950 text-slate-50 antialiased min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
+    <h1 class="text-xl font-semibold mb-4 text-white text-center">Login to PermitBot Pro</h1>
+
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="text-sm text-slate-300">Email</label>
+        <input id="email" type="email" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" placeholder="you@example.com" />
       </div>
-    </header>
 
-    <!-- Main -->
-    <main class="flex-1">
-      <div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <section>
-          <h1 class="text-2xl font-semibold text-white">Dashboard</h1>
-          <p class="mt-1 text-sm text-slate-300 max-w-xl">
-            This is your early access dashboard. You can customize this page to show new permit packet forms,
-            recent jobs, or anything else you want.
-          </p>
-        </section>
-
-        <!-- Example card you can replace -->
-        <section class="grid md:grid-cols-2 gap-4">
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 text-sm">
-            <h2 class="text-sm font-semibold text-white mb-2">Next step: New permit packet</h2>
-            <p class="text-slate-300 mb-3">
-              You can add a form here that collects parcel, jurisdiction, and project type and either:
-            </p>
-            <ul class="list-disc list-inside text-xs text-slate-300 space-y-1">
-              <li>Sends the data to Formspree (like your waitlist form), or</li>
-              <li>Later, calls a backend API that runs the AI engine.</li>
-            </ul>
-          </div>
-
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 text-xs text-slate-300">
-            <h2 class="text-sm font-semibold text-white mb-2">Ideas to add here</h2>
-            <ul class="list-disc list-inside space-y-1">
-              <li>“New permit packet” button + form</li>
-              <li>Table of recent jobs</li>
-              <li>Status tags (Generated, In review, etc.)</li>
-              <li>Notes about which jurisdictions you currently support</li>
-            </ul>
-          </div>
-        </section>
+      <div>
+        <label class="text-sm text-slate-300">Password</label>
+        <input id="password" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" placeholder="••••••••" />
       </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-slate-800">
-      <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
-        <span>© <span id="year"></span> PermitBot Pro.</span>
-        <span>Early access dashboard.</span>
-      </div>
-    </footer>
+      <button type="submit"
+        class="w-full mt-4 bg-emerald-400 text-slate-900 font-semibold py-2 rounded-full hover:bg-emerald-300">
+        Log In
+      </button>
+    </form>
+
+    <p class="text-center text-xs text-slate-400 mt-4">
+      Don’t have an account?
+      <a href="signup.html" class="text-emerald-400 hover:underline">Sign up</a>
+    </p>
   </div>
 
   <script>
-  document.getElementById("login-form").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    document.getElementById("login-form").addEventListener("submit", function (e) {
+      e.preventDefault();
 
-    if (email.length > 0 && password.length > 0) {
-      // Fake login
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+      }
+
+      // Fake login for now
       window.location.href = "dashboard.html";
-    } else {
-      alert("Please enter an email and password.");
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
