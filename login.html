@@ -77,7 +77,18 @@
   </div>
 
   <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
+  document.getElementById("login-form").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    if (email.length > 0 && password.length > 0) {
+      // Fake login
+      window.location.href = "dashboard.html";
+    } else {
+      alert("Please enter an email and password.");
+    }
+  });
+</script>
 </body>
 </html>
