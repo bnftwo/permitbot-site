@@ -1,97 +1,114 @@
-// api/ai-permit-suggest.js
-// Vercel serverless function to call OpenAI and return JSON for permit suggestions
+import OpenAI from "openai";
 
-export default async function handler(request, response) {
-  if (request.method !== "POST") {
-    return response.status(405).json({ error: "Method not allowed" });
-  }
-
-  const {
-    parcel_or_address,
-    jurisdiction,
-    project_type,
-    forms_expected,
-    extra_context,
-  } = request.body || {};
-
-  if (!jurisdiction || !project_type) {
-    return response
-      .status(400)
-      .json({ error: "jurisdiction and project_type are required" });
-  }
-
-  if (!process.env.OPENAI_API_KEY) {
-    return response
-      .status(500)
-      .json({ error: "OPENAI_API_KEY is not set on the server" });
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
-    const prompt = `
-You are an assistant helping contractors and civil engineers determine which permit forms are needed for a job in Florida.
+    const {
+      parcel_or_address,
+      jurisdiction,
+      project_type,
+      forms_expected,
+      extra_context
+    } = req.body;
 
-Return ONLY valid JSON in this format:
-
-{
-  "forms": [
-    {
-      "name": string,
-      "level": "city" | "county" | "state" | "other",
-      "description": string,
-      "who_signs": string,
-      "key_fields": string[]
-    }
-  ],
-  "notes": string
-}
-
-Jurisdiction: ${jurisdiction}
-Project type: ${project_type}
-Parcel or address: ${parcel_or_address || "N/A"}
-Forms user expects: ${forms_expected || "N/A"}
-Extra context: ${extra_context || "N/A"}
-`.trim();
-
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: "You are a helpful permitting assistant." },
-          { role: "user", content: prompt },
-        ],
-      }),
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
     });
 
-        if (!aiRes.ok) {
-      const text = await aiRes.text();
-      console.error("OpenAI error:", text);
-      return response.status(500).json({
-        error: "AI request failed",
-        status: aiRes.status,
-        detail: text
+    const prompt = `
+You are PermitBot Pro — an expert in permits for Volusia County and Flagler County
+(plus the cities Daytona Beach, Ormond Beach, Palm Coast, Port Orange, and New Smyrna Beach).
+
+Your job is to output **clean JSON ONLY** describing the exact forms, applications, checklists, civil engineering sheets, stormwater requirements, and FDEP forms needed for the described job.
+
+The region you serve has these rules:
+- Volusia County: septic common, stormwater review heavy, septic routing required
+- Daytona Beach: utility apps required, STOP permit, driveway/ROW separate
+- Ormond Beach: utility checklists, water/sewer availability, stormwater & grading sheet
+- Palm Coast: heavy on utility apps + stormwater
+- Port Orange: ROW separate, utility availability, stormwater form
+- New Smyrna Beach: strict driveway rules, separate ROW
+- Flagler County: lots of septic, well, flood zone areas
+
+FDEP Notes:
+- Potable water form required for new SFR on public water
+- Sewer collection/transmission form required for any new sewer connection
+- NPDES/Notice of Intent required only for >1 acre disturbance
+
+Civil / Site Specific Rules:
+- New SFR requires site plan, utility plan, grading, erosion control, driveway plan
+- Stormwater analysis required if >10% impervious increase or local city rule
+- Flood zones require elevation cert
+- Wetlands require delineation + possibly SJRWMD ERP triggers (rare for single lots)
+
+Building Permit Triggers:
+- New SFR = building permit app + survey + energy calcs + truss + site plan
+- Pools = site plan + engineered drawings + safety barrier form + electrical/mech
+- Additions = updated survey + site plan + building app + energy calcs
+- TIs = floor plan + MEP sheets + fire review if applicable
+
+Return JSON with the following EXACT shape:
+
+{
+  "jurisdiction_interpretation": "...",
+  "project_classification": "...",
+  "permit_packet": {
+    "civil_engineering": [],
+    "building_department": [],
+    "utility_and_fdep": [],
+    "stormwater": [],
+    "row_or_driveway": [],
+    "other_reviews": []
+  },
+  "recommended_order": [],
+  "notes": "..."
+}
+
+Fill each array with objects shaped like:
+{
+  "name": "",
+  "jurisdiction": "",
+  "category": "",
+  "description": "",
+  "required_if": ""
+}
+
+User Input:
+Parcel/address: ${parcel_or_address || "None provided"}
+Jurisdiction: ${jurisdiction}
+Project Type: ${project_type}
+User-listed forms: ${forms_expected || "None provided"}
+Extra context: ${extra_context || "None provided"}
+
+Output clean JSON only — NO commentary.
+    `;
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.2
+    });
+
+    let text = completion.choices?.[0]?.message?.content || "{}";
+
+    // Attempt to parse JSON safely
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (err) {
+      return res.status(200).json({
+        error: "Invalid JSON received from AI",
+        raw: text
       });
     }
 
+    return res.status(200).json(json);
 
-    const data = await aiRes.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    let parsed;
-    try {
-      parsed = JSON.parse(content);
-    } catch (e) {
-      parsed = { raw: content };
-    }
-
-    return response.status(200).json(parsed);
-  } catch (err) {
-    console.error("Server error:", err);
-    return response.status(500).json({ error: "Server error" });
+  } catch (error) {
+    console.error("API error:", error);
+    res.status(500).json({ error: "Server error", details: error.message });
   }
 }
