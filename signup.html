@@ -5,6 +5,8 @@
   <title>Sign Up – PermitBot Pro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="bg-slate-950 text-slate-50 antialiased min-h-screen flex items-center justify-center px-4">
@@ -14,12 +16,16 @@
     <form id="signup-form" class="space-y-4">
       <div>
         <label class="text-sm text-slate-300">Email</label>
-        <input id="signup-email" type="email" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" placeholder="you@example.com" />
+        <input id="signup-email" type="email"
+          class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
+          placeholder="you@example.com" />
       </div>
 
       <div>
         <label class="text-sm text-slate-300">Password</label>
-        <input id="signup-password" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white" placeholder="••••••••" />
+        <input id="signup-password" type="password"
+          class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
+          placeholder="••••••••" />
       </div>
 
       <button type="submit"
@@ -28,6 +34,9 @@
       </button>
     </form>
 
+    <p id="signup-error" class="mt-3 text-xs text-red-400 text-center"></p>
+    <p id="signup-success" class="mt-1 text-xs text-emerald-400 text-center"></p>
+
     <p class="text-center text-xs text-slate-400 mt-4">
       Already have an account?
       <a href="login.html" class="text-emerald-400 hover:underline">Log in</a>
@@ -35,19 +44,40 @@
   </div>
 
   <script>
-    document.getElementById("signup-form").addEventListener("submit", function (e) {
+    const SUPABASE_URL = "https://cwsktitrhphppjltnquj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.getElementById("signup-form").addEventListener("submit", async function (e) {
       e.preventDefault();
 
       const email = document.getElementById("signup-email").value.trim();
       const password = document.getElementById("signup-password").value.trim();
+      const errorEl = document.getElementById("signup-error");
+      const successEl = document.getElementById("signup-success");
+      errorEl.textContent = "";
+      successEl.textContent = "";
 
       if (!email || !password) {
-        alert("Please enter both email and password.");
+        errorEl.textContent = "Please enter both email and password.";
         return;
       }
 
-      // Fake signup: Just send them to login for now
-      window.location.href = "login.html";
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        errorEl.textContent = error.message || "Signup failed.";
+        return;
+      }
+
+      successEl.textContent = "Account created. You can log in now.";
+      setTimeout(() => {
+        window.location.href = "login.html";
+      }, 1500);
     });
   </script>
 </body>
