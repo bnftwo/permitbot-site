@@ -6,6 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Manage permit packets with PermitBot Pro." />
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
   <div class="min-h-screen flex flex-col">
@@ -23,9 +25,11 @@
         </a>
         <div class="flex items-center gap-3 text-xs">
           <span class="hidden sm:inline text-slate-400">Early access workspace</span>
-          <a href="login.html" class="rounded-full border border-slate-700 px-3 py-1.5 text-slate-200 hover:border-emerald-400/70">
+          <button
+            onclick="logout()"
+            class="rounded-full border border-slate-700 px-3 py-1.5 text-slate-200 hover:border-emerald-400/70">
             Log out
-          </a>
+          </button>
         </div>
       </div>
     </header>
@@ -119,6 +123,30 @@ Fill out the fields above and click “Ask AI” to see suggested forms here.
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
 
+    // Supabase auth setup
+    const SUPABASE_URL = "https://cwsktitrhphppjltnquj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function requireAuth() {
+      const { data, error } = await supabaseClient.auth.getSession();
+      const session = data?.session;
+
+      if (!session) {
+        window.location.href = "login.html";
+      }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+    }
+
+    // Run auth check on load
+    requireAuth();
+
+    // Existing AI call
     async function runPermitAI() {
       const payload = {
         parcel_or_address: document.getElementById("ai-parcel").value,
