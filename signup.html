@@ -4,17 +4,17 @@
   <meta charset="UTF-8" />
   <title>Sign up – PermitBot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind config with your brand colors -->
   <script>
-    tailwind = {
-      config: {
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                teal: '#00C8D7',
-                bg: '#F7F4EC',
-                dark: '#111827'
-              }
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              teal: '#00E5FF',  // neon cyan
+              bg: '#F7F4EC',
+              dark: '#111827'
             }
           }
         }
@@ -34,7 +34,7 @@
         </a>
         <div class="flex items-center gap-3 text-xs">
           <a href="login.html"
-             class="rounded-full border border-slate-400 px-3 py-1.5 text-brand-dark hover:border-brand-teal">
+             class="rounded-full bg-brand-teal px-3 py-1.5 text-brand-dark font-semibold hover:bg-[#00B7CC]">
             Log in
           </a>
         </div>
@@ -46,6 +46,7 @@
       <div class="w-full max-w-md">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h1 class="text-xl font-semibold mb-2 text-brand-dark text-center">Create your PermitBot account</h1>
+          <div class="h-1 w-20 bg-brand-teal rounded-full mx-auto mb-3"></div>
           <p class="text-xs text-slate-600 mb-4 text-center">
             Early access for Volusia / Flagler engineers and contractors.
           </p>
@@ -66,7 +67,7 @@
             </div>
 
             <button type="submit"
-                    class="w-full mt-2 bg-brand-teal text-brand-dark font-semibold py-2 rounded-full text-sm hover:bg-brand-teal/90">
+                    class="w-full mt-2 bg-brand-teal text-brand-dark font-semibold py-2 rounded-full text-sm hover:bg-[#00B7CC]">
               Sign up
             </button>
           </form>
