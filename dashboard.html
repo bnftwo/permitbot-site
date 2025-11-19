@@ -109,6 +109,18 @@
                 placeholder="City water/sewer or well/septic, flood zone, wetlands, corner lot, etc."></textarea>
             </div>
 
+            <!-- NEW: Plans upload -->
+            <div>
+              <label class="block text-xs text-slate-700 mb-1">
+                Plans / PDFs for this job (optional)
+              </label>
+              <input id="plans-input" type="file" multiple accept="application/pdf"
+                class="block w-full text-xs text-slate-700 file:mr-3 file:rounded-full file:border-0 file:bg-brand-teal file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-brand-dark hover:file:bg-[#00B7CC]" />
+              <p id="plans-status" class="mt-1 text-[11px] text-slate-500">
+                No files uploaded yet.
+              </p>
+            </div>
+
             <div class="flex flex-wrap gap-2 items-center mt-2">
               <button
                 onclick="runPermitAI()"
@@ -179,6 +191,7 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let lastAIResult = null;
+    let uploadedPlanUrls = [];
 
     async function requireAuth() {
       const { data } = await supabaseClient.auth.getSession();
@@ -197,6 +210,58 @@
 
     requireAuth();
 
+    // Handle plan uploads
+    const plansInput = document.getElementById("plans-input");
+    const plansStatusEl = document.getElementById("plans-status");
+
+    if (plansInput) {
+      plansInput.addEventListener("change", handlePlansUpload);
+    }
+
+    async function handlePlansUpload(event) {
+      const files = Array.from(event.target.files || []);
+      if (files.length === 0) {
+        plansStatusEl.textContent = "No files selected.";
+        return;
+      }
+
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) {
+        plansStatusEl.textContent = "Log in to upload plans.";
+        return;
+      }
+
+      const userId = session.user.id;
+      const bucket = supabaseClient.storage.from("plans");
+      uploadedPlanUrls = [];
+      plansStatusEl.textContent = "Uploading…";
+
+      for (const file of files) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+        const path = `${userId}/${Date.now()}-${safeName}`;
+
+        const { data, error } = await bucket.upload(path, file, { upsert: false });
+
+        if (error) {
+          console.error("Upload error", error);
+          plansStatusEl.textContent = "Error uploading one or more files.";
+          return;
+        }
+
+        const { data: publicData } = bucket.getPublicUrl(path);
+        if (publicData?.publicUrl) {
+          uploadedPlanUrls.push(publicData.publicUrl);
+        }
+      }
+
+      if (uploadedPlanUrls.length > 0) {
+        plansStatusEl.textContent = `Uploaded ${uploadedPlanUrls.length} file(s).`;
+      } else {
+        plansStatusEl.textContent = "No files uploaded.";
+      }
+    }
+
     // Run AI
     async function runPermitAI() {
       const payload = {
@@ -204,7 +269,8 @@
         jurisdiction: document.getElementById("ai-jurisdiction").value,
         project_type: document.getElementById("ai-project-type").value,
         forms_expected: document.getElementById("ai-forms-expected").value,
-        extra_context: document.getElementById("ai-extra").value
+        extra_context: document.getElementById("ai-extra").value,
+        plan_urls: uploadedPlanUrls
       };
 
       const outSummaryJur = document.getElementById("summary-jurisdiction");
@@ -305,7 +371,7 @@
       });
     }
 
-    // Save job
+    // Save job with status + plan URLs
     async function saveJob() {
       const statusEl = document.getElementById("save-status");
       statusEl.textContent = "";
@@ -334,7 +400,9 @@
           jurisdiction: payload.jurisdiction,
           project_type: payload.project_type,
           parcel: payload.parcel_or_address || payload.parcel || null,
-          ai_output: data
+          ai_output: data,
+          status: "Generated",
+          plan_urls: JSON.stringify(uploadedPlanUrls || [])
         });
 
       if (error) {
@@ -346,7 +414,7 @@
       }
     }
 
-    // Load recent jobs
+    // Load recent jobs with status badge
     async function loadJobs() {
       const listEl = document.getElementById("jobs-list");
       listEl.innerHTML = "<p class='text-xs text-slate-500'>Loading…</p>";
@@ -362,7 +430,7 @@
 
       const { data, error } = await supabaseClient
         .from("jobs")
-        .select("id, created_at, jurisdiction, project_type, parcel")
+        .select("id, created_at, jurisdiction, project_type, parcel, status")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(5);
@@ -381,6 +449,8 @@
       listEl.innerHTML = "";
       data.forEach(job => {
         const created = new Date(job.created_at);
+        const status = job.status || "Generated";
+
         const a = document.createElement("a");
         a.href = `job.html?id=${job.id}`;
         a.className = "block rounded-xl border border-slate-200 bg-white px-3 py-2 hover:border-brand-teal shadow-sm";
@@ -398,8 +468,13 @@
                 ${job.parcel || ""}
               </div>
             </div>
-            <div class="text-[10px] text-slate-500">
-              ${created.toLocaleDateString()}
+            <div class="flex flex-col items-end gap-1">
+              <span class="inline-flex items-center rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-semibold text-brand-dark">
+                ${status}
+              </span>
+              <span class="text-[10px] text-slate-500">
+                ${created.toLocaleDateString()}
+              </span>
             </div>
           </div>
         `;
