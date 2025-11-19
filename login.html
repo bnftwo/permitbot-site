@@ -2,48 +2,96 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Login – PermitBot Pro</title>
+  <title>Login – PermitBot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    tailwind = {
+      config: {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                teal: '#00C8D7',
+                bg: '#F7F4EC',
+                dark: '#111827'
+              }
+            }
+          }
+        }
+      }
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
-<body class="bg-slate-950 text-slate-50 antialiased min-h-screen flex items-center justify-center px-4">
-  <div class="w-full max-w-md bg-slate-900/70 border border-slate-800 rounded-2xl p-6">
-    <h1 class="text-xl font-semibold mb-4 text-white text-center">Login to PermitBot Pro</h1>
-
-    <form id="login-form" class="space-y-4">
-      <div>
-        <label class="text-sm text-slate-300">Email</label>
-        <input id="email" type="email"
-          class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
-          placeholder="you@example.com" />
+<body class="bg-brand-bg text-brand-dark antialiased">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-brand-bg">
+      <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <a href="index.html" class="flex items-center gap-3">
+          <img src="permitbot-logo.svg" alt="PermitBot logo" class="h-10 w-auto" />
+        </a>
+        <div class="flex items-center gap-3 text-xs">
+          <a href="signup.html"
+             class="rounded-full bg-brand-teal px-3 py-1.5 text-brand-dark font-semibold hover:bg-brand-teal/90">
+            Sign up
+          </a>
+        </div>
       </div>
+    </header>
 
-      <div>
-        <label class="text-sm text-slate-300">Password</label>
-        <input id="password" type="password"
-          class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white"
-          placeholder="••••••••" />
+    <!-- Main -->
+    <main class="flex-1 flex items-center justify-center px-4 py-8">
+      <div class="w-full max-w-md">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 class="text-xl font-semibold mb-2 text-brand-dark text-center">Log in to PermitBot</h1>
+          <p class="text-xs text-slate-600 mb-4 text-center">
+            Access your Volusia / Flagler permit dashboard.
+          </p>
+
+          <form id="login-form" class="space-y-4">
+            <div>
+              <label class="text-xs text-slate-700 mb-1 block">Email</label>
+              <input id="email" type="email"
+                     class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-brand-dark text-sm"
+                     placeholder="you@example.com" />
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-700 mb-1 block">Password</label>
+              <input id="password" type="password"
+                     class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-brand-dark text-sm"
+                     placeholder="••••••••" />
+            </div>
+
+            <button type="submit"
+                    class="w-full mt-2 bg-brand-teal text-brand-dark font-semibold py-2 rounded-full text-sm hover:bg-brand-teal/90">
+              Log in
+            </button>
+          </form>
+
+          <p id="login-error" class="mt-3 text-xs text-red-500 text-center"></p>
+
+          <p class="text-center text-xs text-slate-600 mt-4">
+            Don’t have an account?
+            <a href="signup.html" class="text-brand-teal hover:underline">Sign up</a>
+          </p>
+        </div>
       </div>
+    </main>
 
-      <button type="submit"
-        class="w-full mt-4 bg-emerald-400 text-slate-900 font-semibold py-2 rounded-full hover:bg-emerald-300">
-        Log In
-      </button>
-    </form>
-
-    <p id="login-error" class="mt-3 text-xs text-red-400 text-center"></p>
-
-    <p class="text-center text-xs text-slate-400 mt-4">
-      Don’t have an account?
-      <a href="signup.html" class="text-emerald-400 hover:underline">Sign up</a>
-    </p>
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-brand-bg">
+      <div class="max-w-5xl mx-auto px-4 py-4 text-[11px] text-slate-600 text-center">
+        © <span id="year"></span> PermitBot.
+      </div>
+    </footer>
   </div>
 
   <script>
-    // Supabase config
+    document.getElementById("year").textContent = new Date().getFullYear();
+
     const SUPABASE_URL = "https://cwsktitrhphppjltnquj.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
 
@@ -72,7 +120,6 @@
         return;
       }
 
-      // success – go to dashboard
       window.location.href = "dashboard.html";
     });
   </script>
