@@ -5,17 +5,17 @@
   <title>PermitBot – Volusia & Flagler Permit Assistant</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="AI-powered permit assistant for Volusia and Flagler County civil and building workflows." />
+
+  <!-- Tailwind config with your brand colors -->
   <script>
-    tailwind = {
-      config: {
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                teal: '#00C8D7',
-                bg: '#F7F4EC',
-                dark: '#111827'
-              }
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              teal: '#00E5FF',  // neon cyan
+              bg: '#F7F4EC',    // background tone
+              dark: '#111827'   // dark text
             }
           }
         }
@@ -34,11 +34,11 @@
         </a>
         <div class="flex items-center gap-3 text-xs">
           <a href="login.html"
-             class="rounded-full border border-slate-400 px-3 py-1.5 text-brand-dark hover:border-brand-teal">
+             class="rounded-full bg-brand-teal px-3 py-1.5 text-brand-dark font-semibold hover:bg-[#00B7CC]">
             Log in
           </a>
           <a href="signup.html"
-             class="rounded-full bg-brand-teal px-3 py-1.5 text-brand-dark font-semibold hover:bg-brand-teal/90">
+             class="rounded-full border border-brand-teal px-3 py-1.5 text-brand-dark hover:bg-brand-teal/10">
             Get early access
           </a>
         </div>
@@ -66,7 +66,7 @@
           </ul>
           <div class="flex flex-wrap gap-3 pt-2">
             <a href="signup.html"
-               class="rounded-full bg-brand-teal px-5 py-2 text-sm font-semibold text-brand-dark hover:bg-brand-teal/90">
+               class="rounded-full bg-brand-teal px-5 py-2 text-sm font-semibold text-brand-dark hover:bg-[#00B7CC]">
               Create account
             </a>
             <a href="login.html"
