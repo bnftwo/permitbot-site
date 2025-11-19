@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Job Details – PermitBot Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="View permit packet details for a saved job." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-50 antialiased">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header (use your logo header here) -->
+    <header class="border-b border-slate-800 bg-slate-950/90">
+      <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <a href="index.html" class="flex items-center gap-2">
+          <img src="logo.svg" alt="PermitBot Pro logo" class="h-9 w-9 rounded-2xl object-contain bg-slate-900" />
+          <div class="flex flex-col leading-tight">
+            <span class="font-semibold text-sm tracking-tight">PermitBot Pro</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-[0.15em]">Volusia &amp; Flagler Permit Assistant</span>
+          </div>
+        </a>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="hidden sm:inline text-slate-400">Job details</span>
+          <button
+            onclick="logout()"
+            class="rounded-full border border-slate-700 px-3 py-1.5 text-slate-200 hover:border-emerald-400/70">
+            Log out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="flex-1">
+      <div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+        <section>
+          <button onclick="history.back()"
+            class="text-[11px] text-slate-400 hover:text-emerald-400 mb-2">&larr; Back to dashboard</button>
+          <h1 class="text-2xl font-semibold text-white">Job details</h1>
+          <p class="mt-1 text-sm text-slate-300 max-w-xl">
+            View the permit packet AI generated for this specific job. Later we can add PDF downloads from here.
+          </p>
+        </section>
+
+        <!-- Job meta -->
+        <section class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div id="job-project" class="font-semibold text-slate-100">Loading…</div>
+              <div id="job-jurisdiction" class="text-xs text-slate-400"></div>
+              <div id="job-parcel" class="text-xs text-slate-500"></div>
+            </div>
+            <div class="text-[11px] text-slate-500">
+              <span id="job-date"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI summary -->
+        <section class="space-y-3">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+            <p class="text-xs text-slate-400 mb-1">Interpretation</p>
+            <p id="summary-jurisdiction" class="text-sm text-slate-100 mb-1">–</p>
+            <p id="summary-project" class="text-xs text-slate-300 mb-2">–</p>
+            <p id="summary-notes" class="text-xs text-slate-400">Loading AI output…</p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-3" id="categories-container">
+            <!-- JS will inject cards here -->
+          </div>
+
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+            <h3 class="text-xs font-semibold text-slate-200 mb-1">Suggested order of attack</h3>
+            <ol id="recommended-order" class="list-decimal list-inside text-xs text-slate-300 space-y-1"></ol>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
+        <span>© <span id="year"></span> PermitBot Pro.</span>
+        <span>Volusia / Flagler early access.</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const SUPABASE_URL = "https://cwsktitrhphppjltnquj.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function requireAuth() {
+      const { data } = await supabaseClient.auth.getSession();
+      const session = data?.session;
+      if (!session) {
+        window.location.href = "login.html";
+      } else {
+        loadJob();
+      }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+    }
+
+    function getJobIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("id");
+    }
+
+    async function loadJob() {
+      const jobId = getJobIdFromUrl();
+      if (!jobId) {
+        document.getElementById("job-project").textContent = "No job ID provided.";
+        return;
+      }
+
+      const { data: job, error } = await supabaseClient
+        .from("jobs")
+        .select("id, created_at, jurisdiction, project_type, parcel, ai_output")
+        .eq("id", jobId)
+        .single();
+
+      if (error || !job) {
+        console.error(error);
+        document.getElementById("job-project").textContent = "Job not found or access denied.";
+        return;
+      }
+
+      // Fill meta
+      document.getElementById("job-project").textContent = job.project_type || "Job";
+      document.getElementById("job-jurisdiction").textContent = job.jurisdiction || "";
+      document.getElementById("job-parcel").textContent = job.parcel || "";
+      document.getElementById("job-date").textContent = new Date(job.created_at).toLocaleString();
+
+      // Render AI result
+      renderAIResult(job.ai_output || {});
+    }
+
+    function renderAIResult(data) {
+      const outSummaryJur = document.getElementById("summary-jurisdiction");
+      const outSummaryProj = document.getElementById("summary-project");
+      const outSummaryNotes = document.getElementById("summary-notes");
+      const categoriesContainer = document.getElementById("categories-container");
+      const orderList = document.getElementById("recommended-order");
+
+      outSummaryJur.textContent = data.jurisdiction_interpretation || "–";
+      outSummaryProj.textContent = data.project_classification || "–";
+      outSummaryNotes.textContent = data.notes || "–";
+
+      categoriesContainer.innerHTML = "";
+      const packet = data.permit_packet || {};
+
+      const CATEGORY_LABELS = {
+        civil_engineering: "Civil / Site",
+        building_department: "Building Dept",
+        utility_and_fdep: "Utility & FDEP",
+        stormwater: "Stormwater",
+        row_or_driveway: "ROW / Driveway",
+        other_reviews: "Other Reviews"
+      };
+
+      Object.keys(CATEGORY_LABELS).forEach(key => {
+        const items = packet[key] || [];
+        if (!Array.isArray(items) || items.length === 0) return;
+
+        const card = document.createElement("div");
+        card.className = "rounded-2xl border border-slate-800 bg-slate-900/80 p-3";
+
+        const title = document.createElement("h3");
+        title.className = "text-xs font-semibold text-slate-200 mb-2";
+        title.textContent = CATEGORY_LABELS[key];
+        card.appendChild(title);
+
+        const list = document.createElement("ul");
+        list.className = "space-y-1";
+
+        items.forEach(item => {
+          const li = document.createElement("li");
+          li.className = "text-[11px] text-slate-300";
+          li.innerHTML = `
+            <span class="font-semibold text-slate-100">${item.name || "Unnamed item"}</span>
+            <span class="text-slate-500"> (${item.jurisdiction || "Local"})</span><br/>
+            <span class="text-slate-400">${item.description || ""}</span><br/>
+            <span class="text-slate-500">Required if: ${item.required_if || "Typically required"}</span>
+          `;
+          list.appendChild(li);
+        });
+
+        card.appendChild(list);
+        categoriesContainer.appendChild(card);
+      });
+
+      orderList.innerHTML = "";
+      (data.recommended_order || []).forEach(step => {
+        const li = document.createElement("li");
+        li.textContent = step;
+        orderList.appendChild(li);
+      });
+    }
+
+    // Kick off
+    requireAuth();
+  </script>
+</body>
+</html>
