@@ -1,0 +1,71 @@
+<svg width="500" height="200" viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .pb-black { fill: #202020; }
+    .pb-mint { fill: #00E5FF; }
+    .pb-text {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      font-weight: 700;
+    }
+  </style>
+
+  <!-- ICON -->
+  <g transform="translate(40,38)">
+    <!-- Hexagon -->
+    <polygon
+      points="40,0 80,23 80,69 40,92 0,69 0,23"
+      fill="none"
+      stroke="#202020"
+      stroke-width="6"
+      stroke-linejoin="round"
+    />
+
+    <!-- Robot head (dropped down) -->
+    <rect
+      x="20" y="30" width="40" height="30"
+      rx="10" ry="10"
+      fill="none"
+      stroke="#202020"
+      stroke-width="5"
+    />
+
+    <!-- Antenna (dropped with head) -->
+    <line
+      x1="40" y1="18" x2="40" y2="30"
+      stroke="#202020"
+      stroke-width="5"
+      stroke-linecap="round"
+    />
+
+    <!-- Eyes (dropped with head) -->
+    <circle cx="32" cy="45" r="4.5" fill="#00E5FF" />
+    <circle cx="48" cy="45" r="4.5" fill="#00E5FF" />
+
+    <!-- BODY / TORSO: arch "n" touching near the V of the hex -->
+    <path
+      d="M18 78
+         C 18 60, 62 60, 62 78"
+      fill="none"
+      stroke="#202020"
+      stroke-width="6"
+      stroke-linecap="round"
+    />
+  </g>
+
+  <!-- WORDMARK -->
+  <text
+    x="165" y="105"
+    font-size="52"
+    class="pb-text pb-black"
+  >
+    PERMITBOT
+  </text>
+
+  <!-- UNDERLINE -->
+  <rect
+    x="165" y="118"
+    width="270"
+    height="10"
+    rx="4"
+    class="pb-mint"
+  />
+</svg>
