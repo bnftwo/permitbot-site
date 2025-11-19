@@ -11,20 +11,21 @@
 </head>
 <body class="bg-slate-950 text-slate-50 antialiased">
   <div class="min-h-screen flex flex-col">
-    <!-- Header -->
+    <!-- Header with logo -->
     <header class="border-b border-slate-800 bg-slate-950/90">
       <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <a href="index.html" class="flex items-center gap-2">
-          <div class="h-9 w-9 rounded-2xl bg-emerald-400 flex items-center justify-center font-bold text-slate-950 text-lg">
-            PB
-          </div>
+          <!-- change logo.svg to logo.png if needed -->
+          <img src="logo.svg" alt="PermitBot Pro logo" class="h-9 w-9 rounded-2xl object-contain bg-slate-900" />
           <div class="flex flex-col leading-tight">
             <span class="font-semibold text-sm tracking-tight">PermitBot Pro</span>
-            <span class="text-[11px] text-slate-400 uppercase tracking-[0.15em]">Permit Dashboard</span>
+            <span class="text-[11px] text-slate-400 uppercase tracking-[0.15em]">
+              Volusia &amp; Flagler Permit Assistant
+            </span>
           </div>
         </a>
         <div class="flex items-center gap-3 text-xs">
-          <span class="hidden sm:inline text-slate-400">Volusia / Flagler early access</span>
+          <span class="hidden sm:inline text-slate-400">Early access workspace</span>
           <button
             onclick="logout()"
             class="rounded-full border border-slate-700 px-3 py-1.5 text-slate-200 hover:border-emerald-400/70">
@@ -73,7 +74,7 @@
                 <label class="block text-xs text-slate-200 mb-1">Project type *</label>
                 <input id="ai-project-type"
                   class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-                  placeholder="SFR – New build, pool, addition, TI, etc." />
+                  placeholder="SFR – new build, pool, addition, TI, etc." />
               </div>
             </div>
 
@@ -128,7 +129,7 @@
 
           <!-- Categories -->
           <div class="grid md:grid-cols-2 gap-3" id="categories-container">
-            <!-- JS will inject cards here -->
+            <!-- JS injects cards here -->
           </div>
 
           <!-- Recommended order -->
@@ -174,7 +175,7 @@
       if (!session) {
         window.location.href = "login.html";
       } else {
-        loadJobs();
+        loadJobs(); // load jobs once we know who the user is
       }
     }
 
@@ -336,7 +337,7 @@
       }
     }
 
-    // Load recent jobs
+    // Load recent jobs (this is the loadJobs you asked for)
     async function loadJobs() {
       const listEl = document.getElementById("jobs-list");
       listEl.innerHTML = "<p class='text-xs text-slate-500'>Loading…</p>";
@@ -370,22 +371,31 @@
 
       listEl.innerHTML = "";
       data.forEach(job => {
-        const div = document.createElement("div");
-        div.className = "rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2";
         const created = new Date(job.created_at);
-        div.innerHTML = `
+        const a = document.createElement("a");
+        a.href = `job.html?id=${job.id}`;
+        a.className = "block rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 hover:border-emerald-400/70";
+
+        a.innerHTML = `
           <div class="flex justify-between items-center">
             <div>
-              <div class="text-[11px] font-semibold text-slate-100">${job.project_type || "Job"}</div>
-              <div class="text-[11px] text-slate-400">${job.jurisdiction || ""}</div>
-              <div class="text-[11px] text-slate-500">${job.parcel || ""}</div>
+              <div class="text-[11px] font-semibold text-slate-100">
+                ${job.project_type || "Job"}
+              </div>
+              <div class="text-[11px] text-slate-400">
+                ${job.jurisdiction || ""}
+              </div>
+              <div class="text-[11px] text-slate-500">
+                ${job.parcel || ""}
+              </div>
             </div>
             <div class="text-[10px] text-slate-500">
               ${created.toLocaleDateString()}
             </div>
           </div>
         `;
-        listEl.appendChild(div);
+
+        listEl.appendChild(a);
       });
     }
   </script>
