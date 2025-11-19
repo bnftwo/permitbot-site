@@ -58,16 +58,29 @@
         </section>
 
         <!-- Job meta -->
-        <section class="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm space-y-2">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <div id="job-project" class="font-semibold text-brand-dark">Loading…</div>
+              <div class="flex items-center gap-2">
+                <div id="job-project" class="font-semibold text-brand-dark">Loading…</div>
+                <span id="job-status-badge"
+                      class="inline-flex items-center rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-semibold text-brand-dark">
+                </span>
+              </div>
               <div id="job-jurisdiction" class="text-xs text-slate-600"></div>
               <div id="job-parcel" class="text-xs text-slate-500"></div>
             </div>
             <div class="text-[11px] text-slate-500">
               <span id="job-date"></span>
             </div>
+          </div>
+        </section>
+
+        <!-- Plans list -->
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+          <h2 class="text-xs font-semibold text-brand-dark mb-2">Plans / PDFs</h2>
+          <div id="job-plans" class="space-y-1 text-xs text-slate-700">
+            <p class="text-slate-500 text-xs">No plans uploaded for this job.</p>
           </div>
         </section>
 
@@ -138,7 +151,7 @@
 
       const { data: job, error } = await supabaseClient
         .from("jobs")
-        .select("id, created_at, jurisdiction, project_type, parcel, ai_output")
+        .select("id, created_at, jurisdiction, project_type, parcel, ai_output, status, plan_urls")
         .eq("id", jobId)
         .single();
 
@@ -152,6 +165,36 @@
       document.getElementById("job-jurisdiction").textContent = job.jurisdiction || "";
       document.getElementById("job-parcel").textContent = job.parcel || "";
       document.getElementById("job-date").textContent = new Date(job.created_at).toLocaleString();
+
+      const status = job.status || "Generated";
+      const statusBadge = document.getElementById("job-status-badge");
+      statusBadge.textContent = status;
+
+      // Plans
+      const plansEl = document.getElementById("job-plans");
+      let planUrls = [];
+
+      try {
+        planUrls = job.plan_urls ? JSON.parse(job.plan_urls) : [];
+      } catch (e) {
+        console.error("Error parsing plan_urls", e);
+        planUrls = [];
+      }
+
+      if (!planUrls || planUrls.length === 0) {
+        plansEl.innerHTML = "<p class='text-slate-500 text-xs'>No plans uploaded for this job.</p>";
+      } else {
+        plansEl.innerHTML = "";
+        planUrls.forEach((url, index) => {
+          const a = document.createElement("a");
+          a.href = url;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.className = "block text-brand-dark underline hover:text-brand-teal";
+          a.textContent = `Plan ${index + 1}`;
+          plansEl.appendChild(a);
+        });
+      }
 
       renderAIResult(job.ai_output || {});
     }
