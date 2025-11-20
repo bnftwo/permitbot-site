@@ -405,48 +405,67 @@
       });
     }
 
-    // Save job (simple version – base columns only)
-    async function saveJob() {
-      const statusEl = document.getElementById("save-status");
-      statusEl.textContent = "";
+    // Save job including any uploaded plan URLs
+async function saveJob() {
+  const statusEl = document.getElementById("save-status");
+  statusEl.textContent = "";
 
-      if (!lastAIResult) {
-        statusEl.textContent = "Run AI first before saving.";
-        return;
-      }
+  if (!lastAIResult) {
+    statusEl.textContent = "Run AI first before saving.";
+    return;
+  }
 
-      const { payload, data } = lastAIResult;
+  const { payload, data } = lastAIResult;
 
-      const { data: sessionData } = await supabaseClient.auth.getSession();
-      const session = sessionData?.session;
-      if (!session) {
-        statusEl.textContent = "Not logged in.";
-        return;
-      }
+  // Make sure user is logged in
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const session = sessionData?.session;
+  if (!session) {
+    statusEl.textContent = "Not logged in.";
+    return;
+  }
 
-      const userId = session.user.id;
-      statusEl.textContent = "Saving…";
+  const userId = session.user.id;
+  statusEl.textContent = "Saving…";
 
-      const baseRow = {
-        user_id: userId,
-        jurisdiction: payload.jurisdiction,
-        project_type: payload.project_type,
-        parcel: payload.parcel_or_address || payload.parcel || null,
-        ai_output: data
-      };
+  // Basic fields every jobs row has
+  const baseRow = {
+    user_id: userId,
+    jurisdiction: payload.jurisdiction,
+    project_type: payload.project_type,
+    parcel: payload.parcel_or_address || payload.parcel || null,
+    ai_output: data
+  };
 
-      let { error } = await supabaseClient
-        .from("jobs")
-        .insert(baseRow);
+  // Extra field for plan URLs (if column exists)
+  const extraFields = {
+    plan_urls: uploadedPlanUrls && uploadedPlanUrls.length
+      ? uploadedPlanUrls
+      : []
+  };
 
-      if (error) {
-        console.error("Save job failed:", error);
-        statusEl.textContent = "Error saving job";
-      } else {
-        statusEl.textContent = "Saved.";
-        loadJobs();
-      }
-    }
+  // First try insert with plan_urls
+  let { error } = await supabaseClient
+    .from("jobs")
+    .insert({ ...baseRow, ...extraFields });
+
+  // If plan_urls column does not exist (error 42703), retry without it
+  if (error && error.code === "42703") {
+    console.warn("jobs.plan_urls column missing, saving without plan URLs:", error);
+    ({ error } = await supabaseClient
+      .from("jobs")
+      .insert(baseRow));
+  }
+
+  if (error) {
+    console.error("Save job failed:", error);
+    statusEl.textContent = "Error saving job: " + (error.message || "unknown error");
+  } else {
+    statusEl.textContent = "Saved.";
+    loadJobs();
+  }
+}
+
 
     // Load recent jobs
     async function loadJobs() {
