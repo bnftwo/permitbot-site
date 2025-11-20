@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Job details – PermitBot</title>
+  <title>Job – PermitBot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="View permit packet details for a saved job." />
 
   <script>
     tailwind = {
@@ -31,12 +30,12 @@
     <!-- Header -->
     <header class="border-b border-slate-200 bg-brand-bg">
       <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <a href="index.html" class="flex items-center gap-3">
+        <a href="dashboard.html" class="flex items-center gap-3">
           <img src="permitbot-logo.svg" alt="PermitBot logo" class="h-10 w-auto" />
         </a>
         <div class="flex items-center gap-3 text-xs">
-          <span id="welcome-user" class="hidden sm:inline text-slate-600">
-            Loading user…
+          <span id="job-header-label" class="hidden sm:inline text-slate-600">
+            Loading job…
           </span>
           <button
             onclick="logout()"
@@ -49,73 +48,57 @@
 
     <!-- Main -->
     <main class="flex-1">
-      <div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <section>
-          <button onclick="history.back()"
-                  class="text-[11px] text-slate-600 hover:text-brand-teal mb-2">&larr; Back to dashboard</button>
-          <h1 class="text-2xl font-semibold text-brand-dark">Job details</h1>
-          <div class="h-1 w-20 bg-brand-teal rounded-full mt-1"></div>
-          <p class="mt-2 text-sm text-slate-700 max-w-xl">
-            View the permit packet AI generated for this specific job.
-          </p>
-        </section>
+      <div class="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         <!-- Job meta -->
-        <section class="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <section id="job-meta" class="space-y-2">
+          <p class="text-xs text-slate-500 cursor-pointer hover:text-brand-teal"
+             onclick="window.location.href='dashboard.html'">
+            ← Back to dashboard
+          </p>
+          <h1 id="job-title" class="text-2xl font-semibold text-brand-dark">
+            Loading…
+          </h1>
+          <div class="h-1 w-20 bg-brand-teal rounded-full mt-1"></div>
+          <p id="job-subtitle" class="mt-2 text-sm text-slate-700 max-w-xl"> </p>
+
+          <div class="mt-3 grid sm:grid-cols-3 gap-3 text-xs text-slate-700">
             <div>
-              <div class="flex items-center gap-2">
-                <div id="job-project" class="font-semibold text-brand-dark">Loading…</div>
-                <span id="job-status-badge"
-                      class="inline-flex items-center rounded-full bg-brand-teal/10 px-2 py-0.5 text-[10px] font-semibold text-brand-dark">
-                </span>
-              </div>
-              <div id="job-jurisdiction" class="text-xs text-slate-600"></div>
-              <div id="job-parcel" class="text-xs text-slate-500"></div>
+              <div class="text-slate-500">Jurisdiction</div>
+              <div id="job-jurisdiction" class="font-semibold text-brand-dark">–</div>
             </div>
-            <div class="text-[11px] text-slate-500">
-              <span id="job-date"></span>
+            <div>
+              <div class="text-slate-500">Parcel / Address</div>
+              <div id="job-parcel" class="font-semibold text-brand-dark break-words">–</div>
             </div>
-          </div>
-
-          <!-- Status changer -->
-          <div class="flex items-center gap-2 text-[11px] text-slate-700">
-            <span>Update status:</span>
-            <select id="status-select"
-                    class="rounded-full border border-slate-300 bg-white px-2 py-1 text-[11px] text-brand-dark">
-              <option value="Generated">Generated</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Submitted">Submitted</option>
-              <option value="Issued">Issued</option>
-            </select>
-            <button
-              onclick="updateStatus()"
-              class="rounded-full bg-brand-teal px-3 py-1 text-[11px] font-semibold text-brand-dark hover:bg-[#00B7CC]">
-              Save
-            </button>
-            <span id="status-message" class="text-[11px] text-slate-500"></span>
+            <div>
+              <div class="text-slate-500">Created</div>
+              <div id="job-created" class="font-semibold text-brand-dark">–</div>
+            </div>
           </div>
         </section>
 
-        <!-- Plans list -->
-        <section class="rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
-          <h2 class="text-xs font-semibold text-brand-dark mb-2">Plans / PDFs</h2>
-          <div id="job-plans" class="space-y-1 text-xs text-slate-700">
-            <p class="text-slate-500 text-xs">No plans uploaded for this job.</p>
+        <!-- Plans -->
+        <section class="space-y-2">
+          <h2 class="text-sm font-semibold text-brand-dark">Plans / PDFs</h2>
+          <div id="job-plans" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-xs text-slate-700">
+            <p class="text-slate-500">No plans uploaded for this job.</p>
           </div>
         </section>
 
-        <!-- AI summary & details -->
+        <!-- AI Output -->
         <section class="space-y-3">
+          <h2 class="text-sm font-semibold text-brand-dark">AI permit packet</h2>
+
           <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-xs text-slate-600 mb-1">Interpretation</p>
             <p id="summary-jurisdiction" class="text-sm text-brand-dark mb-1">–</p>
             <p id="summary-project" class="text-xs text-slate-700 mb-2">–</p>
-            <p id="summary-notes" class="text-xs text-slate-600">Loading AI output…</p>
+            <p id="summary-notes" class="text-xs text-slate-600">–</p>
           </div>
 
           <div class="grid md:grid-cols-2 gap-3" id="categories-container">
-            <!-- JS injects cards here -->
+            <!-- JS injects cards -->
           </div>
 
           <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -142,134 +125,125 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    async function requireAuth() {
-      const { data } = await supabaseClient.auth.getSession();
-      const session = data?.session;
-      if (!session) {
-        window.location.href = "login.html";
-      } else {
-        await showWelcomeUser();
-        loadJob();
-      }
-    }
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobId = urlParams.get("id");
 
     async function logout() {
       await supabaseClient.auth.signOut();
       window.location.href = "login.html";
     }
 
-    async function showWelcomeUser() {
-      const welcomeEl = document.getElementById("welcome-user");
-      const { data } = await supabaseClient.auth.getUser();
-      const user = data?.user;
-
-      if (!user) {
-        welcomeEl.textContent = "Job details";
+    async function requireAuth() {
+      const { data } = await supabaseClient.auth.getSession();
+      const session = data?.session;
+      if (!session) {
+        window.location.href = "login.html";
         return;
       }
-
-      const fullName = user.user_metadata?.full_name;
-      if (fullName) {
-        welcomeEl.textContent = `Welcome, ${fullName}`;
-        return;
-      }
-
-      if (user.email) {
-        const username = user.email.split("@")[0];
-        welcomeEl.textContent = `Welcome, ${username}`;
-        return;
-      }
-
-      welcomeEl.textContent = "Job details";
+      await loadJob();
     }
 
-    function getJobIdFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("id");
-    }
+    requireAuth();
 
     async function loadJob() {
-      const jobId = getJobIdFromUrl();
       if (!jobId) {
-        document.getElementById("job-project").textContent = "No job ID provided.";
+        document.getElementById("job-title").textContent = "Job not found";
+        document.getElementById("job-subtitle").textContent = "Missing job id in URL.";
         return;
       }
 
-      const { data: job, error } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from("jobs")
-        .select("id, created_at, jurisdiction, project_type, parcel, ai_output, status, plan_urls")
+        .select("*")
         .eq("id", jobId)
         .single();
 
-      if (error || !job) {
+      if (error || !data) {
         console.error(error);
-        document.getElementById("job-project").textContent = "Job not found or access denied.";
+        document.getElementById("job-title").textContent = "Job not found";
+        document.getElementById("job-subtitle").textContent = "Could not load job.";
         return;
       }
 
-      document.getElementById("job-project").textContent = job.project_type || "Job";
-      document.getElementById("job-jurisdiction").textContent = job.jurisdiction || "";
-      document.getElementById("job-parcel").textContent = job.parcel || "";
-      document.getElementById("job-date").textContent = new Date(job.created_at).toLocaleString();
-
-      const status = job.status || "Generated";
-      const statusBadge = document.getElementById("job-status-badge");
-      const statusSelect = document.getElementById("status-select");
-      statusBadge.textContent = status;
-      statusSelect.value = status;
-
-      // Plans list
-      const plansEl = document.getElementById("job-plans");
-      let planUrls = [];
-
-      try {
-        planUrls = job.plan_urls ? JSON.parse(job.plan_urls) : [];
-      } catch (e) {
-        console.error("Error parsing plan_urls", e);
-        planUrls = [];
-      }
-
-      if (!planUrls || planUrls.length === 0) {
-        plansEl.innerHTML = "<p class='text-slate-500 text-xs'>No plans uploaded for this job.</p>";
-      } else {
-        plansEl.innerHTML = "";
-        planUrls.forEach((url, index) => {
-          const a = document.createElement("a");
-          a.href = url;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          a.className = "block text-brand-dark underline hover:text-brand-teal";
-          a.textContent = `Plan ${index + 1}`;
-          plansEl.appendChild(a);
-        });
-      }
-
-      renderAIResult(job.ai_output || {});
+      renderJobMeta(data);
+      renderPlans(data.plan_urls);
+      renderAIResult(data.ai_output);
     }
 
-    async function updateStatus() {
-      const jobId = getJobIdFromUrl();
-      const statusSelect = document.getElementById("status-select");
-      const statusMessage = document.getElementById("status-message");
-      const newStatus = statusSelect.value;
+    function renderJobMeta(job) {
+      const created = job.created_at ? new Date(job.created_at) : null;
 
-      statusMessage.textContent = "Saving...";
-      const { error } = await supabaseClient
-        .from("jobs")
-        .update({ status: newStatus })
-        .eq("id", jobId);
+      document.getElementById("job-title").textContent =
+        job.project_type || "Permit job";
 
-      if (error) {
-        console.error(error);
-        statusMessage.textContent = "Error saving status.";
-      } else {
-        document.getElementById("job-status-badge").textContent = newStatus;
-        statusMessage.textContent = "Status updated.";
+      document.getElementById("job-subtitle").textContent =
+        job.jurisdiction || "";
+
+      document.getElementById("job-jurisdiction").textContent =
+        job.jurisdiction || "–";
+
+      document.getElementById("job-parcel").textContent =
+        job.parcel || "–";
+
+      document.getElementById("job-created").textContent =
+        created ? created.toLocaleString() : "–";
+
+      const headerLabel = document.getElementById("job-header-label");
+      headerLabel.textContent = "Job details";
+      headerLabel.classList.remove("hidden");
+    }
+
+    function renderPlans(planUrls) {
+      const container = document.getElementById("job-plans");
+      container.innerHTML = "";
+
+      let urls = [];
+
+      if (Array.isArray(planUrls)) {
+        urls = planUrls;
+      } else if (typeof planUrls === "string" && planUrls.trim() !== "") {
+        try {
+          const parsed = JSON.parse(planUrls);
+          if (Array.isArray(parsed)) urls = parsed;
+        } catch (e) {
+          console.warn("Could not parse plan_urls string", e);
+        }
       }
+
+      if (!urls.length) {
+        container.innerHTML = "<p class='text-slate-500 text-xs'>No plans uploaded for this job.</p>";
+        return;
+      }
+
+      const list = document.createElement("ul");
+      list.className = "space-y-1";
+
+      urls.forEach((url, idx) => {
+        const li = document.createElement("li");
+        li.className = "text-xs";
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.className = "text-brand-teal hover:underline break-all";
+        a.textContent = `Plan ${idx + 1}`;
+
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+
+      container.appendChild(list);
     }
 
     function renderAIResult(data) {
+      if (!data || typeof data !== "object") {
+        document.getElementById("summary-jurisdiction").textContent = "No AI data stored for this job.";
+        document.getElementById("summary-project").textContent = "";
+        document.getElementById("summary-notes").textContent = "";
+        return;
+      }
+
       const outSummaryJur = document.getElementById("summary-jurisdiction");
       const outSummaryProj = document.getElementById("summary-project");
       const outSummaryNotes = document.getElementById("summary-notes");
@@ -330,8 +304,6 @@
         orderList.appendChild(li);
       });
     }
-
-    requireAuth();
   </script>
 </body>
 </html>
