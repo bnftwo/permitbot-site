@@ -409,27 +409,65 @@
       });
     }
 
-    // Save job with status + plans
-    async function saveJob() {
-      const statusEl = document.getElementById("save-status");
-      statusEl.textContent = "";
+   // Save job with status + plans, but fall back if columns don't exist
+async function saveJob() {
+  const statusEl = document.getElementById("save-status");
+  statusEl.textContent = "";
 
-      if (!lastAIResult) {
-        statusEl.textContent = "Run AI first before saving.";
-        return;
-      }
+  if (!lastAIResult) {
+    statusEl.textContent = "Run AI first before saving.";
+    return;
+  }
 
-      const { payload, data } = lastAIResult;
+  const { payload, data } = lastAIResult;
 
-      const { data: sessionData } = await supabaseClient.auth.getSession();
-      const session = sessionData?.session;
-      if (!session) {
-        statusEl.textContent = "Not logged in.";
-        return;
-      }
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const session = sessionData?.session;
+  if (!session) {
+    statusEl.textContent = "Not logged in.";
+    return;
+  }
 
-      const userId = session.user.id;
-      statusEl.textContent = "Saving…";
+  const userId = session.user.id;
+  statusEl.textContent = "Saving…";
+
+  // Base fields that we KNOW exist in your jobs table
+  const baseRow = {
+    user_id: userId,
+    jurisdiction: payload.jurisdiction,
+    project_type: payload.project_type,
+    parcel: payload.parcel_or_address || payload.parcel || null,
+    ai_output: data
+  };
+
+  // Extra fields we WANT (but table might not have yet)
+  const extraFields = {
+    status: "Generated",
+    plan_urls: JSON.stringify(uploadedPlanUrls || [])
+  };
+
+  // First try insert with status + plan_urls
+  let { error } = await supabaseClient
+    .from("jobs")
+    .insert({ ...baseRow, ...extraFields });
+
+  // If columns don't exist (error code 42703), retry without them
+  if (error && error.code === "42703") {
+    console.warn("jobs table missing status/plan_urls, saving without them:", error);
+    ({ error } = await supabaseClient
+      .from("jobs")
+      .insert(baseRow));
+  }
+
+  if (error) {
+    console.error("Save job failed:", error);
+    statusEl.textContent = "Error saving job: " + (error.message || "unknown error");
+  } else {
+    statusEl.textContent = "Saved.";
+    loadJobs();
+  }
+}
+
 
       // If your DB doesn't yet have status/plan_urls, either add them
       // OR remove these fields from the insert.
