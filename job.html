@@ -5,6 +5,7 @@
   <title>Job – PermitBot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- Tailwind config + CDN -->
   <script>
     tailwind = {
       config: {
@@ -23,6 +24,8 @@
     }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-brand-bg text-brand-dark antialiased">
@@ -51,15 +54,297 @@
       <div class="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
         <!-- Job meta -->
-        <section id="job-meta" class="space-y-2">
-          <p class="text-xs text-slate-500 cursor-pointer hover:text-brand-teal"
-             onclick="window.location.href='dashboard.html'">
+        <section id="job-meta" class="space-y-3">
+          <button
+            type="button"
+            onclick="window.location.href='dashboard.html'"
+            class="text-xs text-slate-500 hover:text-brand-teal">
             ← Back to dashboard
-          </p>
-          <h1 id="job-title" class="text-2xl font-semibold text-brand-dark">
-            Loading…
-          </h1>
+          </button>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 id="job-title" class="text-2xl font-semibold text-brand-dark">
+              Loading…
+            </h1>
+            <span id="job-status-badge" class="hidden rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700"></span>
+          </div>
+
           <div class="h-1 w-20 bg-brand-teal rounded-full mt-1"></div>
+
+          <p id="job-subtitle" class="mt-2 text-sm text-slate-700 max-w-xl">
+            Loading job details…
+          </p>
+
+          <div class="mt-3 grid sm:grid-cols-3 gap-3 text-xs text-slate-700">
+            <div>
+              <div class="text-slate-500">Jurisdiction</div>
+              <div id="job-jurisdiction" class="font-semibold text-brand-dark">–</div>
+            </div>
+            <div>
+              <div class="text-slate-500">Parcel / Address</div>
+              <div id="job-parcel" class="font-semibold text-brand-dark break-words">–</div>
+            </div>
+            <div>
+              <div class="text-slate-500">Created</div>
+              <div id="job-created" class="font-semibold text-brand-dark">–</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Plans -->
+        <section class="space-y-2">
+          <h2 class="text-sm font-semibold text-brand-dark">Plans / PDFs</h2>
+          <div id="job-plans" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-xs text-slate-700">
+            <p class="text-slate-500">No plans uploaded for this job.</p>
+          </div>
+        </section>
+
+        <!-- AI Output -->
+        <section class="space-y-3">
+          <h2 class="text-sm font-semibold text-brand-dark">AI permit packet</h2>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-xs text-slate-600 mb-1">Interpretation</p>
+            <p id="summary-jurisdiction" class="text-sm text-brand-dark mb-1">–</p>
+            <p id="summary-project" class="text-xs text-slate-700 mb-2">–</p>
+            <p id="summary-notes" class="text-xs text-slate-600">–</p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-3" id="categories-container">
+            <!-- JS injects cards -->
+          </div>
+
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h3 class="text-xs font-semibold text-brand-dark mb-1">Suggested order of attack</h3>
+            <ol id="recommended-order" class="list-decimal list-inside text-xs text-slate-700 space-y-1"></ol>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-brand-bg">
+      <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-600">
+        <span>© <span id="year"></span> PermitBot.</span>
+        <span>Volusia / Flagler early access.</span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const SUPABASE_URL = "https://cwsktitrhphppjltnquj.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobId = urlParams.get("id");
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
+    }
+
+    async function requireAuth() {
+      const { data } = await supabaseClient.auth.getSession();
+      const session = data?.session;
+      if (!session) {
+        window.location.href = "login.html";
+        return;
+      }
+      await loadJob();
+    }
+
+    requireAuth();
+
+    async function loadJob() {
+      const titleEl = document.getElementById("job-title");
+      const subtitleEl = document.getElementById("job-subtitle");
+
+      if (!jobId) {
+        titleEl.textContent = "Job not found";
+        subtitleEl.textContent = "Missing job id in URL.";
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from("jobs")
+        .select("*")
+        .eq("id", jobId)
+        .single();
+
+      if (error || !data) {
+        console.error(error);
+        titleEl.textContent = "Job not found";
+        subtitleEl.textContent = "Could not load job.";
+        return;
+      }
+
+      renderJobMeta(data);
+      renderPlans(data.plan_urls);
+      renderAIResult(data.ai_output);
+    }
+
+    function renderJobMeta(job) {
+      const created = job.created_at ? new Date(job.created_at) : null;
+
+      document.getElementById("job-title").textContent =
+        job.project_type || "Permit job";
+
+      document.getElementById("job-subtitle").textContent =
+        job.jurisdiction || "";
+
+      document.getElementById("job-jurisdiction").textContent =
+        job.jurisdiction || "–";
+
+      document.getElementById("job-parcel").textContent =
+        job.parcel || "–";
+
+      document.getElementById("job-created").textContent =
+        created ? created.toLocaleString() : "–";
+
+      const headerLabel = document.getElementById("job-header-label");
+      headerLabel.textContent = "Job details";
+      headerLabel.classList.remove("hidden");
+
+      // Status badge (if the column exists / has value)
+      const statusBadge = document.getElementById("job-status-badge");
+      const status = job.status || null;
+      if (status) {
+        statusBadge.textContent = status;
+        statusBadge.classList.remove("hidden");
+
+        // simple color hint
+        const s = status.toLowerCase();
+        if (s.includes("issued") || s.includes("approved")) {
+          statusBadge.classList.add("border-emerald-300", "text-emerald-700");
+        } else if (s.includes("submitted") || s.includes("in progress")) {
+          statusBadge.classList.add("border-amber-300", "text-amber-700");
+        } else {
+          statusBadge.classList.add("border-slate-300", "text-slate-700");
+        }
+      }
+    }
+
+    function renderPlans(planUrls) {
+      const container = document.getElementById("job-plans");
+      container.innerHTML = "";
+
+      let urls = [];
+
+      if (Array.isArray(planUrls)) {
+        urls = planUrls;
+      } else if (typeof planUrls === "string" && planUrls.trim() !== "") {
+        try {
+          const parsed = JSON.parse(planUrls);
+          if (Array.isArray(parsed)) urls = parsed;
+        } catch (e) {
+          console.warn("Could not parse plan_urls string", e);
+        }
+      }
+
+      if (!urls.length) {
+        container.innerHTML = "<p class='text-slate-500 text-xs'>No plans uploaded for this job.</p>";
+        return;
+      }
+
+      const list = document.createElement("ul");
+      list.className = "space-y-1";
+
+      urls.forEach((url, idx) => {
+        const li = document.createElement("li");
+        li.className = "text-xs";
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.className = "text-brand-teal hover:underline break-all";
+        a.textContent = `Plan ${idx + 1}`;
+
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+
+      container.appendChild(list);
+    }
+
+    function renderAIResult(data) {
+      const outSummaryJur = document.getElementById("summary-jurisdiction");
+      const outSummaryProj = document.getElementById("summary-project");
+      const outSummaryNotes = document.getElementById("summary-notes");
+      const categoriesContainer = document.getElementById("categories-container");
+      const orderList = document.getElementById("recommended-order");
+
+      if (!data || typeof data !== "object") {
+        outSummaryJur.textContent = "No AI data stored for this job.";
+        outSummaryProj.textContent = "";
+        outSummaryNotes.textContent = "";
+        categoriesContainer.innerHTML = "";
+        orderList.innerHTML = "";
+        return;
+      }
+
+      outSummaryJur.textContent = data.jurisdiction_interpretation || "–";
+      outSummaryProj.textContent = data.project_classification || "–";
+      outSummaryNotes.textContent = data.notes || "–";
+
+      categoriesContainer.innerHTML = "";
+      const packet = data.permit_packet || {};
+
+      const CATEGORY_LABELS = {
+        civil_engineering: "Civil / Site",
+        building_department: "Building Dept",
+        utility_and_fdep: "Utility & FDEP",
+        stormwater: "Stormwater",
+        row_or_driveway: "ROW / Driveway",
+        other_reviews: "Other Reviews"
+      };
+
+      Object.keys(CATEGORY_LABELS).forEach(key => {
+        const items = packet[key] || [];
+        if (!Array.isArray(items) || items.length === 0) return;
+
+        const card = document.createElement("div");
+        card.className = "rounded-2xl border border-slate-200 bg-white p-3 shadow-sm";
+
+        const title = document.createElement("h3");
+        title.className = "text-xs font-semibold text-brand-dark mb-2";
+        title.textContent = CATEGORY_LABELS[key];
+        card.appendChild(title);
+
+        const list = document.createElement("ul");
+        list.className = "space-y-1";
+
+        items.forEach(item => {
+          const li = document.createElement("li");
+          li.className = "text-[11px] text-slate-700";
+          li.innerHTML = `
+            <span class="font-semibold text-brand-dark">${item.name || "Unnamed item"}</span>
+            <span class="text-slate-500"> (${item.jurisdiction || "Local"})</span><br/>
+            <span class="text-slate-600">${item.description || ""}</span><br/>
+            <span class="text-slate-500">Required if: ${item.required_if || "Typically required"}</span>
+          `;
+          list.appendChild(li);
+        });
+
+        card.appendChild(list);
+        categoriesContainer.appendChild(card);
+      });
+
+      orderList.innerHTML = "";
+      (data.recommended_order || []).forEach(step => {
+        const li = document.createElement("li");
+        li.textContent = step;
+        orderList.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
           <p id="job-subtitle" class="mt-2 text-sm text-slate-700 max-w-xl"> </p>
 
           <div class="mt-3 grid sm:grid-cols-3 gap-3 text-xs text-slate-700">
