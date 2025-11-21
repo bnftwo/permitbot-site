@@ -25,7 +25,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Supabase -->
+  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-brand-bg text-brand-dark antialiased">
@@ -57,8 +57,8 @@
           <h1 class="text-2xl font-semibold text-brand-dark">Dashboard</h1>
           <div class="h-1 w-20 bg-brand-teal rounded-full mt-1"></div>
           <p class="mt-2 text-sm text-slate-700 max-w-xl">
-            Use this dashboard to ask AI which permits/forms you likely need for a job in Volusia / Flagler
-            and save the job to your account.
+            Use this dashboard to ask AI which permits/forms and civil/site documents you likely
+            need for a job in Volusia / Flagler and nearby cities. Then save the job to your account.
           </p>
         </section>
 
@@ -89,7 +89,7 @@
                 <label class="block text-xs text-slate-700 mb-1">Project type *</label>
                 <input id="ai-project-type"
                   class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-brand-dark"
-                  placeholder="SFR – new build, pool, addition, TI, etc." />
+                  placeholder="SFR – new build, pool, TI, addition, etc." />
               </div>
             </div>
 
@@ -185,16 +185,20 @@
   </div>
 
   <script>
+    // --- Setup ---
     document.getElementById("year").textContent = new Date().getFullYear();
 
     const SUPABASE_URL = "https://cwsktitrhphppjltnquj.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3c2t0aXRyaHBocHBqbHRucXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM0MTM4OTMsImV4cCI6MjA3ODk4OTg5M30.4eMRLpadUbS_FEyBH8bsYqsBGX65kUI16WXKAfFXfus";
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let lastAIResult = null;
     let uploadedPlanUrls = [];
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
+    // --- Auth helpers ---
     async function requireAuth() {
       const { data } = await supabaseClient.auth.getSession();
       const session = data?.session;
@@ -206,11 +210,6 @@
       }
     }
 
-    async function logout() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "login.html";
-    }
-
     async function showWelcomeUser() {
       const welcomeEl = document.getElementById("welcome-user");
       const { data } = await supabaseClient.auth.getUser();
@@ -218,27 +217,28 @@
 
       if (!user) {
         welcomeEl.textContent = "Welcome";
-        return;
+      } else {
+        const fullName = user.user_metadata?.full_name;
+        if (fullName) {
+          welcomeEl.textContent = `Welcome, ${fullName}`;
+        } else if (user.email) {
+          const username = user.email.split("@")[0];
+          welcomeEl.textContent = `Welcome, ${username}`;
+        } else {
+          welcomeEl.textContent = "Welcome";
+        }
       }
+      welcomeEl.classList.remove("hidden");
+    }
 
-      const fullName = user.user_metadata?.full_name;
-      if (fullName) {
-        welcomeEl.textContent = `Welcome, ${fullName}`;
-        return;
-      }
-
-      if (user.email) {
-        const username = user.email.split("@")[0];
-        welcomeEl.textContent = `Welcome, ${username}`;
-        return;
-      }
-
-      welcomeEl.textContent = "Welcome";
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "login.html";
     }
 
     requireAuth();
 
-    // Plans upload
+    // --- Plans upload ---
     const plansInput = document.getElementById("plans-input");
     const plansStatusEl = document.getElementById("plans-status");
 
@@ -266,6 +266,14 @@
       plansStatusEl.textContent = "Uploading…";
 
       for (const file of files) {
+        // size check
+        if (file.size > MAX_FILE_SIZE) {
+          const mb = (file.size / (1024 * 1024)).toFixed(1);
+          plansStatusEl.textContent =
+            `File "${file.name}" is ${mb} MB. Max allowed is 50 MB.`;
+          return;
+        }
+
         const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
         const path = `${userId}/${Date.now()}-${safeName}`;
 
@@ -290,7 +298,7 @@
       }
     }
 
-    // Call AI
+    // --- AI call ---
     async function runPermitAI() {
       const payload = {
         parcel_or_address: document.getElementById("ai-parcel").value,
@@ -333,7 +341,6 @@
 
         const data = await res.json();
         lastAIResult = { payload, data };
-
         renderAIResult(data);
       } catch (err) {
         console.error(err);
@@ -405,69 +412,49 @@
       });
     }
 
-    // Save job including any uploaded plan URLs
-async function saveJob() {
-  const statusEl = document.getElementById("save-status");
-  statusEl.textContent = "";
+    // --- Save job (includes plan_urls) ---
+    async function saveJob() {
+      const statusEl = document.getElementById("save-status");
+      statusEl.textContent = "";
 
-  if (!lastAIResult) {
-    statusEl.textContent = "Run AI first before saving.";
-    return;
-  }
+      if (!lastAIResult) {
+        statusEl.textContent = "Run AI first before saving.";
+        return;
+      }
 
-  const { payload, data } = lastAIResult;
+      const { payload, data } = lastAIResult;
 
-  // Make sure user is logged in
-  const { data: sessionData } = await supabaseClient.auth.getSession();
-  const session = sessionData?.session;
-  if (!session) {
-    statusEl.textContent = "Not logged in.";
-    return;
-  }
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) {
+        statusEl.textContent = "Not logged in.";
+        return;
+      }
 
-  const userId = session.user.id;
-  statusEl.textContent = "Saving…";
+      const userId = session.user.id;
+      statusEl.textContent = "Saving…";
 
-  // Basic fields every jobs row has
-  const baseRow = {
-    user_id: userId,
-    jurisdiction: payload.jurisdiction,
-    project_type: payload.project_type,
-    parcel: payload.parcel_or_address || payload.parcel || null,
-    ai_output: data
-  };
+      const baseRow = {
+        user_id: userId,
+        jurisdiction: payload.jurisdiction,
+        project_type: payload.project_type,
+        parcel: payload.parcel_or_address || payload.parcel || null,
+        ai_output: data,
+        plan_urls: uploadedPlanUrls || []
+      };
 
-  // Extra field for plan URLs (if column exists)
-  const extraFields = {
-    plan_urls: uploadedPlanUrls && uploadedPlanUrls.length
-      ? uploadedPlanUrls
-      : []
-  };
+      let { error } = await supabaseClient.from("jobs").insert(baseRow);
 
-  // First try insert with plan_urls
-  let { error } = await supabaseClient
-    .from("jobs")
-    .insert({ ...baseRow, ...extraFields });
+      if (error) {
+        console.error("Save job failed:", error);
+        statusEl.textContent = "Error saving job";
+      } else {
+        statusEl.textContent = "Saved.";
+        loadJobs();
+      }
+    }
 
-  // If plan_urls column does not exist (error 42703), retry without it
-  if (error && error.code === "42703") {
-    console.warn("jobs.plan_urls column missing, saving without plan URLs:", error);
-    ({ error } = await supabaseClient
-      .from("jobs")
-      .insert(baseRow));
-  }
-
-  if (error) {
-    console.error("Save job failed:", error);
-    statusEl.textContent = "Error saving job: " + (error.message || "unknown error");
-  } else {
-    statusEl.textContent = "Saved.";
-    loadJobs();
-  }
-}
-
-
-    // Load recent jobs
+    // --- Load recent jobs ---
     async function loadJobs() {
       const listEl = document.getElementById("jobs-list");
       listEl.innerHTML = "<p class='text-xs text-slate-500'>Loading…</p>";
@@ -505,7 +492,8 @@ async function saveJob() {
 
         const a = document.createElement("a");
         a.href = `job.html?id=${job.id}`;
-        a.className = "block rounded-xl border border-slate-200 bg-white px-3 py-2 hover:border-brand-teal shadow-sm";
+        a.className =
+          "block rounded-xl border border-slate-200 bg-white px-3 py-2 hover:border-brand-teal shadow-sm";
 
         a.innerHTML = `
           <div class="flex justify-between items-center">
